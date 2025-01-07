@@ -13,27 +13,30 @@ import sys
 import os
 from sinkhorn import sample_stats, sq_bw_distance, sinkhorn, bw_uvp
 from collections import defaultdict
-'''
-Given a configuration, train SCONES and BP and output
-'''
 
-cnf = Config("Swiss-Roll",
-             source="gaussian",
-             target="swiss-roll",
-             l = 2,
-             score_lr=0.000001,
-             score_iters=1000,
-             score_bs=500,
-             score_noise_init=3,
-             score_noise_final=0.01,
-             scones_iters=1000,
-             scones_bs=1000,
-             device='cuda',
-             score_n_classes = 10,
-             score_steps_per_class = 300,
-             score_sampling_lr = 0.00001,
-             scones_samples_per_source=100,
-             seed=2039)
+"""
+Given a configuration, train SCONES and BP and output
+"""
+
+cnf = Config(
+    "Swiss-Roll",
+    source="gaussian",
+    target="swiss-roll",
+    l=2,
+    score_lr=0.000001,
+    score_iters=1000,
+    score_bs=500,
+    score_noise_init=3,
+    score_noise_final=0.01,
+    scones_iters=1000,
+    scones_bs=1000,
+    device="cuda",
+    score_n_classes=10,
+    score_steps_per_class=300,
+    score_sampling_lr=0.00001,
+    scones_samples_per_source=100,
+    seed=2039,
+)
 torch.manual_seed(cnf.seed)
 np.random.seed(cnf.seed)
 
@@ -44,32 +47,32 @@ OVERWRITE = False
 
 # Create directories for saving pretrained models if they do not already exist
 touch_path = lambda p: os.makedirs(p) if not os.path.exists(p) else None
-for path in ['', 'cpat', 'bproj', 'ncsn']:
-    touch_path('pretrained/' + path)
+for path in ["", "cpat", "bproj", "ncsn"]:
+    touch_path("pretrained/" + path)
 
 # Search for and load any existing pretrained models
-if ((not OVERWRITE) and os.path.exists(os.path.join("pretrained/cpat", cnf.name))):
+if (not OVERWRITE) and os.path.exists(os.path.join("pretrained/cpat", cnf.name)):
     cpat.load(os.path.join("pretrained/cpat", cnf.name, "cpat.pt"))
 else:
     train_cpat(cpat, cnf, verbose=True)
 
 bproj = init_bproj(cpat, cnf)
 
-if ((not OVERWRITE) and os.path.exists(os.path.join("pretrained/bproj", cnf.name))):
+if (not OVERWRITE) and os.path.exists(os.path.join("pretrained/bproj", cnf.name)):
     bproj.load(os.path.join("pretrained/bproj", cnf.name, "bproj.pt"))
 else:
     train_bproj(bproj, cnf, verbose=True)
 
 score = init_score(cnf)
 
-if ((not OVERWRITE) and os.path.exists(os.path.join("pretrained/score", cnf.name))):
+if (not OVERWRITE) and os.path.exists(os.path.join("pretrained/score", cnf.name)):
     score.load(os.path.join("pretrained/score", cnf.name, "score.pt"))
 else:
     train_score(score, cnf, verbose=True)
 
 scones = SCONES(cpat, score, bproj, cnf)
 
-# Sample and test the model 
+# Sample and test the model
 n_samples = 400
 Xs = cnf.source_dist.rvs(size=(n_samples,))
 Xs_th = torch.FloatTensor(Xs).to(cnf.device)
@@ -100,8 +103,8 @@ plt.gcf().set_size_inches(10, 5)
 plt.savefig("Source_2_Target.png")
 plt.show()
 
-#np.save("Cutout_Bproj_Gaussian->SwissRoll.npy", bproj_Xs)
-#np.save("Cutout_SCONES_Gaussian->SwissRoll.npy", scones_samples)
+# np.save("Cutout_Bproj_Gaussian->SwissRoll.npy", bproj_Xs)
+# np.save("Cutout_SCONES_Gaussian->SwissRoll.npy", scones_samples)
 np.save("Cutout.npy", scones_samples)
 np.save("Sources.npy", Xs)
 np.save("Target.npy", cnf.target_dist.rvs(size=(k,)))

@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "optimal-transport"
+version = "0.1.0"
+description = ""
+authors = ["killian31 <80256683+killian31@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+scikit-learn = "^1.6.0"
+numpy = "1.23.4"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

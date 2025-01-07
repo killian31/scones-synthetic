@@ -1,42 +1,46 @@
 from datasets import *
 
+
 def resolve_dataset(D):
-    if(D == "2moon"):
+    if D == "2moon":
         return TwoMoons(noise=0.1)
-    if(D == "circle"):
+    if D == "circle":
         return Circle(noise=0.1)
-    if(D == "swiss-roll"):
+    if D == "swiss-roll":
         return SwissRoll(noise=0.25)
-    if(D == "gaussian"):
+    if D == "gaussian":
         return Gaussian(mean=np.array([0, 0]), cov=np.eye(2))
 
-class Config():
-    def __init__(self,
-                 name,
-                 source=None,
-                 target=None,
-                 l=10,
-                 cpat_lr=0.00001,
-                 cpat_iters=5000,
-                 cpat_bs=500,
-                 bproj_lr=0.00001,
-                 bproj_iters=5000,
-                 bproj_bs=500,
-                 score_lr=0.00001,
-                 score_iters=5000,
-                 score_bs=500,
-                 scones_iters=1000,
-                 scones_bs=1000,
-                 cov_samples=10000,
-                 device='cuda',
-                 score_n_classes = 20,
-                 score_steps_per_class = 5,
-                 score_sampling_lr = 0.001,
-                 score_noise_init = 3,
-                 score_noise_final = 0.01,
-                 scones_samples_per_source = 10,
-                 seed=2039):
-        '''
+
+class Config:
+    def __init__(
+        self,
+        name,
+        source=None,
+        target=None,
+        l=10,
+        cpat_lr=0.00001,
+        cpat_iters=5000,
+        cpat_bs=500,
+        bproj_lr=0.00001,
+        bproj_iters=5000,
+        bproj_bs=500,
+        score_lr=0.00001,
+        score_iters=5000,
+        score_bs=500,
+        scones_iters=1000,
+        scones_bs=1000,
+        cov_samples=10000,
+        device="cuda",
+        score_n_classes=20,
+        score_steps_per_class=5,
+        score_sampling_lr=0.001,
+        score_noise_init=3,
+        score_noise_final=0.01,
+        scones_samples_per_source=10,
+        seed=2039,
+    ):
+        """
         Configuration file for qualitative transportation experiments.
 
         :param name: name of these experiment, used to label pretrained models and exported artifacts.
@@ -63,7 +67,7 @@ class Config():
         :param score_noise_final: (for non Gaussians) final noise level during Langevin sampling. Given the initial, final, and n_classes, the noise levels are chosen as the geometric series of n_classes terms whose first, last values are initial, final resp.
         :param scones_samples_per_source: for each source sample, how many target samples to generate conditioned on that source
         :param seed: optional fixed seed
-        '''
+        """
         self.name = name
 
         self.source_dist = resolve_dataset(source)
@@ -93,30 +97,32 @@ class Config():
         self.device = device
         self.seed = seed
 
-class GaussianConfig():
-    def __init__(self,
-                 name,
-                 source_cov=None,
-                 target_cov=None,
-                 scale_huh=False,
-                 l=10,
-                 cpat_lr=0.00001,
-                 cpat_iters=5000,
-                 cpat_bs=500,
-                 bproj_lr=0.00001,
-                 bproj_iters=5000,
-                 bproj_bs=500,
-                 scones_sampling_lr=0.01,
-                 scones_iters=1000,
-                 scones_bs=1000,
-                 cov_samples=10000,
-                 device='cuda',
-                 score_n_classes = 20,
-                 score_steps_per_class = 5,
-                 score_sampling_lr = 0.001,
-                 seed=2039):
 
-        '''
+class GaussianConfig:
+    def __init__(
+        self,
+        name,
+        source_cov=None,
+        target_cov=None,
+        scale_huh=False,
+        l=10,
+        cpat_lr=0.00001,
+        cpat_iters=5000,
+        cpat_bs=500,
+        bproj_lr=0.00001,
+        bproj_iters=5000,
+        bproj_bs=500,
+        scones_sampling_lr=0.01,
+        scones_iters=1000,
+        scones_bs=1000,
+        cov_samples=10000,
+        device="cuda",
+        score_n_classes=20,
+        score_steps_per_class=5,
+        score_sampling_lr=0.001,
+        seed=2039,
+    ):
+        """
         Configuration file for sampling Gaussians and comparing BW-UVP in multiple dimensions.
 
         :param name: name of these experiment, used to label pretrained models and exported artifacts.
@@ -139,13 +145,13 @@ class GaussianConfig():
         :param score_steps_per_class: (for non Gaussians) number of langevin iterations run per each fixed noise level.
         :param score_sampling_lr: learning rate for optimizing the score based generative model.
         :param seed: optional fixed seed
-        '''
+        """
         self.name = name
         self.source_cov = np.load(source_cov)
         self.source_dim = len(self.source_cov)
         self.target_cov = np.load(target_cov)
         self.target_dim = len(self.target_cov)
-        if(scale_huh):
+        if scale_huh:
             d = len(self.source_cov)
             self.source_cov = self.source_cov / d
             self.target_cov = self.target_cov / d
