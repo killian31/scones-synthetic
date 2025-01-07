@@ -47,7 +47,6 @@ class GaussianSCONES:
                     cov = self._est_covariance(source, target)
                     print("")
                     print(cov)
-            pbar.set_description(f"Batch {b+1}/{n_batches}")
             pbar.update(1)
             samples.append(target)
         pbar.close()

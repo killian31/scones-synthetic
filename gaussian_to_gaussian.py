@@ -58,6 +58,18 @@ if __name__ == "__main__":
         "--scones_iters", type=int, default=1000, help="Number of SCONES iterations"
     )
     parser.add_argument(
+        "--scones_sampling_lr",
+        type=float,
+        default=0.001,
+        help="Learning rate for SCONES sampling",
+    )
+    parser.add_argument(
+        "--scones_samples_per_source",
+        type=int,
+        default=10,
+        help="Scones samples per source",
+    )
+    parser.add_argument(
         "--verbose", action="store_true", help="Print verbose output during training"
     )
     args = parser.parse_args()
@@ -78,8 +90,9 @@ if __name__ == "__main__":
                 bproj_iters=args.bproj_iters,
                 bproj_lr=args.bproj_lr,
                 scones_iters=args.scones_iters,
+                scones_sampling_lr=args.scones_sampling_lr,
                 device=args.device,
-                l=d * 2,
+                l=d * 2,  # regularization parameter
                 seed=args.seed,
             )
 
