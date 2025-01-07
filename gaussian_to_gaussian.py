@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -17,8 +18,48 @@ from score import GaussianScore
 from sinkhorn import bw_uvp, sample_stats, sinkhorn, sq_bw_distance
 
 if __name__ == "__main__":
-    OVERWRITE = False
-    dims = [2, 16, 64, 128, 256]
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing models"
+    )
+    parser.add_argument("--device", type=str, default="cpu", help="Device to use")
+    parser.add_argument(
+        "--dims",
+        type=int,
+        nargs="+",
+        default=[2, 16, 64, 128, 256],
+        help="Dimensions to run",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=2039, help="Seed for reproducibility"
+    )
+    parser.add_argument(
+        "--cpat_bs", type=int, default=500, help="Batch size for CPAT optimization"
+    )
+    parser.add_argument(
+        "--cpat_iters", type=int, default=5000, help="Number of CPAT iterations"
+    )
+    parser.add_argument(
+        "--cpat_lr",
+        type=float,
+        default=0.00001,
+        help="Learning rate for CPAT (divided by dimension)",
+    )
+    parser.add_argument(
+        "--bproj_bs", type=int, default=500, help="Batch size for BProj optimization"
+    )
+    parser.add_argument(
+        "--bproj_iters", type=int, default=5000, help="Number of BProj iterations"
+    )
+    parser.add_argument(
+        "--bproj_lr", type=float, default=0.00001, help="Learning rate for BProj"
+    )
+    parser.add_argument(
+        "--scones_iters", type=int, default=1000, help="Number of SCONES iterations"
+    )
+    args = parser.parse_args()
+    OVERWRITE = args.overwrite
+    dims = args.dims
     results = {str(d): {"runs": []} for d in dims}
     for d in dims[::-1]:
         for i in trange(3):
@@ -27,15 +68,16 @@ if __name__ == "__main__":
                 source_cov=f"data/d={d}/{i}/source_cov.npy",
                 target_cov=f"data/d={d}/{i}/target_cov.npy",
                 scale_huh=False,
-                cpat_bs=500,
-                cpat_iters=5000,
-                cpat_lr=0.000001 * d,
-                bproj_bs=500,
-                bproj_iters=5000,
-                bproj_lr=0.00001,
-                scones_iters=1000,
-                device="cpu",
+                cpat_bs=args.cpat_bs,
+                cpat_iters=args.cpat_iters,
+                cpat_lr=args.cpat_lr * d,
+                bproj_bs=args.bproj_bs,
+                bproj_iters=args.bproj_iters,
+                bproj_lr=args.bproj_lr,
+                scones_iters=args.scones_iters,
+                device=args.device,
                 l=d * 2,
+                seed=args.seed,
             )
 
             torch.manual_seed(cnf.seed)
