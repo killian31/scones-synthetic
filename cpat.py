@@ -1,9 +1,11 @@
-import torch
-from nets import FCNN, FCNN2, FCCritic
 import os
 import shutil
+
 import numpy as np
+import torch
 import tqdm
+
+from nets import FCNN, FCNN2, FCCritic
 
 
 class Compatibility:
@@ -23,7 +25,7 @@ class Compatibility:
             torch.save(states, os.path.join(path, f"cpat_{train_idx}.pt"))
 
     def load(self, path):
-        cpat_dict = torch.load(path)
+        cpat_dict = torch.load(path, map_location=self.cnf.device)
         self.phi.load_state_dict(cpat_dict["phi"])
         self.psi.load_state_dict(cpat_dict["psi"])
 

@@ -1,11 +1,13 @@
-import torch
-from nets import FCNN, FCNN2
 import os
 import shutil
-import numpy as np
-import tqdm
-from config import Config
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import tqdm
+
+from config import Config
+from nets import FCNN, FCNN2
 
 
 class Score:
@@ -115,6 +117,7 @@ class GaussianScore:
             prec = np.linalg.inv(self.gaussian.cov + s * np.eye(self.dim))
         else:
             prec = self.prec
+        prec = torch.FloatTensor(prec).to(self.cnf.device)
         score = -prec @ x.view((-1, self.dim, 1))
         return score.view((-1, self.dim))
 

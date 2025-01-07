@@ -1,9 +1,11 @@
-import torch
-from nets import FCNN, FCNN2
 import os
 import shutil
+
 import numpy as np
+import torch
 import tqdm
+
+from nets import FCNN, FCNN2
 
 
 class BaryProj:
@@ -23,7 +25,7 @@ class BaryProj:
             torch.save(state, os.path.join(path, f"bproj_{train_idx}.pt"))
 
     def load(self, path):
-        self.projector.load_state_dict(torch.load(path))
+        self.projector.load_state_dict(torch.load(path, map_location=self.cnf.device))
 
     def mapping_error(self, x, y):
         err = torch.sum((self.projector(x) - y) ** 2, dim=1).view((-1, 1))

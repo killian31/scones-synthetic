@@ -57,6 +57,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scones_iters", type=int, default=1000, help="Number of SCONES iterations"
     )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print verbose output during training"
+    )
     args = parser.parse_args()
     OVERWRITE = args.overwrite
     dims = args.dims
@@ -90,7 +93,7 @@ if __name__ == "__main__":
             ):
                 cpat.load(os.path.join("pretrained/cpat", cnf.name, "cpat.pt"))
             else:
-                train_cpat(cpat, cnf, verbose=True)
+                train_cpat(cpat, cnf, verbose=args.verbose)
 
             bproj = init_bproj(cpat, cnf)
 
@@ -99,7 +102,7 @@ if __name__ == "__main__":
             ):
                 bproj.load(os.path.join("pretrained/bproj", cnf.name, "bproj.pt"))
             else:
-                train_bproj(bproj, cnf, verbose=True)
+                train_bproj(bproj, cnf, verbose=args.verbose)
 
             prior = GaussianScore(cnf.target_dist, cnf)
             scones = GaussianSCONES(cpat, prior, bproj, cnf)
@@ -110,7 +113,7 @@ if __name__ == "__main__":
             mean = np.zeros((cnf.source_dim + cnf.target_dim,))
 
             bproj_cov = bproj.covariance(Xs_th)
-            scones_cov = scones.covariance(Xs_th, verbose=False)
+            scones_cov = scones.covariance(Xs_th, verbose=args.verbose)
 
             bproj_bw_uvp = bw_uvp(bproj_cov, cnf.source_cov, cnf.target_cov, cnf.l)
             scones_bw_uvp = bw_uvp(scones_cov, cnf.source_cov, cnf.target_cov, cnf.l)
