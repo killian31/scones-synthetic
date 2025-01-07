@@ -63,8 +63,6 @@ if __name__ == "__main__":
             scones = GaussianSCONES(cpat, prior, bproj, cnf)
 
             Xs = cnf.source_dist.rvs(size=(cnf.cov_samples,))
-            print(cnf.cov_samples)
-            exit()
             Xs_th = torch.FloatTensor(Xs).to(cnf.device)
 
             mean = np.zeros((cnf.source_dim + cnf.target_dim,))
