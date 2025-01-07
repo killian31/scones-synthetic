@@ -33,7 +33,7 @@ class GaussianSCONES:
         target_batches = [self.bproj.projector(s) for s in source_batches]
         samples = []
 
-        pbar = tqdm.tqdm(range(n_batches * self.cnf.scones_iters))
+        pbar = tqdm.tqdm(range(n_batches))
         for b in pbar:
             source = source_batches[b]
             target = target_batches[b]
@@ -47,7 +47,8 @@ class GaussianSCONES:
                     cov = self._est_covariance(source, target)
                     print("")
                     print(cov)
-                pbar.update(1)
+            pbar.set_description(f"Batch {b+1}/{n_batches}")
+            pbar.update(1)
             samples.append(target)
         pbar.close()
         return torch.cat(samples, dim=0)
