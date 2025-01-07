@@ -64,10 +64,13 @@ if __name__ == "__main__":
         help="Learning rate for SCONES sampling",
     )
     parser.add_argument(
-        "--scones_samples_per_source",
+        "--scones_bs", type=int, default=1000, help="Batch size for SCONES sampling"
+    )
+    parser.add_argument(
+        "--cov_samples",
         type=int,
-        default=10,
-        help="Scones samples per source",
+        default=10000,
+        help="Number of samples for covariance",
     )
     parser.add_argument(
         "--verbose", action="store_true", help="Print verbose output during training"
@@ -91,6 +94,8 @@ if __name__ == "__main__":
                 bproj_lr=args.bproj_lr,
                 scones_iters=args.scones_iters,
                 scones_sampling_lr=args.scones_sampling_lr,
+                scones_bs=args.scones_bs,
+                cov_samples=args.cov_samples,
                 device=args.device,
                 l=d * 2,  # regularization parameter
                 seed=args.seed,

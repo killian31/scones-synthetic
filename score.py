@@ -36,7 +36,7 @@ class Score:
             torch.save(state, os.path.join(path, f"score_{train_idx}.pt"))
 
     def load(self, path):
-        self.score_net.load_state_dict(torch.load(path))
+        self.score_net.load_state_dict(torch.load(path, map_location=self.cnf.device))
 
     def score(self, x, noise_std=1):
         if self.posterior_score is not None:
@@ -123,6 +123,7 @@ class GaussianScore:
 
 
 if __name__ == "__main__":
+    n_samples = 500
     cnf = Config(
         "Swiss-Roll",
         source="gaussian",
@@ -133,20 +134,29 @@ if __name__ == "__main__":
         score_noise_init=3,
         score_noise_final=0.01,
         scones_iters=1000,
-        scones_bs=1000,
-        device="cuda",
+        scones_bs=n_samples,
+        device="cpu",
         score_n_classes=10,
         score_steps_per_class=10,
         score_sampling_lr=0.0001,
         seed=2039,
     )
-    ex_samples = cnf.target_dist.rvs(size=(1000,))
+    ex_samples = cnf.target_dist.rvs(size=(n_samples,))
     score = init_score(cnf)
     # train_score(score, cnf, verbose=True)
-    score.load(os.path.join("score", cnf.name, "score.pt"))
-    learned_samples = score.sample(size=(1000,)).detach().cpu().numpy()
+    score.load(os.path.join("pretrained/score", cnf.name, "score.pt"))
+    learned_samples = score.sample(size=(n_samples,)).detach().cpu().numpy()
     plt.subplot(1, 2, 1)
-    plt.scatter(*ex_samples.T)
+    plt.scatter(*ex_samples.T, s=6, color="blue")
     plt.subplot(1, 2, 2)
-    plt.scatter(*learned_samples.T)
+    plt.scatter(*learned_samples.T, s=6, color="blue")
+    plt.scatter(*cnf.source_dist.rvs(size=(n_samples,)).T, s=6, color="red")
+    for i in range(n_samples):
+        plt.plot(
+            [cnf.source_dist.rvs(size=(n_samples,))[i, 0], learned_samples[i, 0]],
+            [cnf.source_dist.rvs(size=(n_samples,))[i, 1], learned_samples[i, 1]],
+            color="black",
+            alpha=0.3,
+            linewidth=0.3,
+        )
     plt.show()
