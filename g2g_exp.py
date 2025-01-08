@@ -34,14 +34,14 @@ if __name__ == "__main__":
         "--lmbdas",
         type=float,
         nargs="+",
-        default=[2.0, 5.0],  # Example default: try lambda=2.0 and lambda=5.0
+        default=[0.1, 0.5, 1.0, 2.0, 4.0, 8.0, 9.0, 10.0, 15.0, 20.0],
         help="List of regularization parameters to test",
     )
     parser.add_argument(
         "--hidden_dims",
         type=int,
         nargs="+",
-        default=[1024, 2048],  # Example default: test 1024 and 2048
+        default=[32, 64, 128, 256, 512, 1024, 2048, 4096],
         help="List of hidden layer dimensions for CPAT and BProj",
     )
     parser.add_argument(
@@ -91,36 +91,30 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Prepare a nested dictionary to store all results:
-    # results[d][lambda_value][hidden_dim]['runs'] = [...]
-    # and we’ll also store bproj-mean-bw-uvp, scones-mean-bw-uvp.
     results = {str(d): {} for d in args.dims}
 
     OVERWRITE = args.overwrite
 
     for d in args.dims:
-        # For each dimension in dims, we test all (lambda, hidden_dim) combos
         for lmbda_val in args.lmbdas:
             for hidden_dim in args.hidden_dims:
 
-                # Initialize a structure to track runs for the combo (lmbda_val, hidden_dim)
                 key = f"lambda={lmbda_val}_hdim={hidden_dim}"
                 if key not in results[str(d)]:
                     results[str(d)][key] = {"runs": []}
 
                 for i in trange(3, desc=f"d={d}, λ={lmbda_val}, hdim={hidden_dim}"):
-                    # Build config
                     cnf = GaussianConfig(
                         name=(
                             f"l={lmbda_val}_d={d}_cpatdim={hidden_dim}_"
-                            f"bprojdim={hidden_dim}_k=0_run={i}"
+                            f"bprojdim={hidden_dim}_k=0"
                         ),
                         source_cov=f"data/d={d}/{i}/source_cov.npy",
                         target_cov=f"data/d={d}/{i}/target_cov.npy",
                         scale_huh=False,
                         cpat_bs=args.cpat_bs,
                         cpat_iters=args.cpat_iters,
-                        cpat_lr=args.cpat_lr * d,  # dimension factor
+                        cpat_lr=args.cpat_lr * d,
                         bproj_bs=args.bproj_bs,
                         bproj_iters=args.bproj_iters,
                         bproj_lr=args.bproj_lr,
@@ -135,35 +129,28 @@ if __name__ == "__main__":
                         bproj_hidden_layer_dim=hidden_dim,
                     )
 
-                    # Fix seeds
                     torch.manual_seed(cnf.seed)
                     np.random.seed(cnf.seed)
 
-                    # Initialize CPAT
                     cpat = init_cpat(cnf)
 
-                    # Either load CPAT or train it
                     cpat_model_dir = os.path.join("pretrained", "cpat", cnf.name)
                     if (not OVERWRITE) and os.path.exists(cpat_model_dir):
                         cpat.load(os.path.join(cpat_model_dir, "cpat.pt"))
                     else:
                         train_cpat(cpat, cnf, verbose=args.verbose)
 
-                    # Initialize BProj
                     bproj = init_bproj(cpat, cnf)
 
-                    # Either load BProj or train it
                     bproj_model_dir = os.path.join("pretrained", "bproj", cnf.name)
                     if (not OVERWRITE) and os.path.exists(bproj_model_dir):
                         bproj.load(os.path.join(bproj_model_dir, "bproj.pt"))
                     else:
                         train_bproj(bproj, cnf, verbose=args.verbose)
 
-                    # Initialize prior (target distribution) for SCONES
                     prior = GaussianScore(cnf.target_dist, cnf)
                     scones = GaussianSCONES(cpat, prior, bproj, cnf)
 
-                    # Evaluate
                     Xs = cnf.source_dist.rvs(size=(cnf.cov_samples,))
                     Xs_th = torch.FloatTensor(Xs).to(cnf.device)
 
@@ -177,7 +164,6 @@ if __name__ == "__main__":
                         scones_cov, cnf.source_cov, cnf.target_cov, cnf.l
                     )
 
-                    # Append results for this run
                     results[str(d)][key]["runs"].append(
                         {
                             "run_idx": i,
@@ -189,7 +175,6 @@ if __name__ == "__main__":
                         }
                     )
 
-                # After finishing the runs for a given (lambda, hidden_dim):
                 bproj_avg_bw_uvp = np.mean(
                     [run["bproj-bw-uvp"] for run in results[str(d)][key]["runs"]]
                 )
@@ -199,8 +184,6 @@ if __name__ == "__main__":
                 results[str(d)][key]["bproj-mean-bw-uvp"] = float(bproj_avg_bw_uvp)
                 results[str(d)][key]["scones-mean-bw-uvp"] = float(scones_avg_bw_uvp)
 
-    # Construct an informative filename
-    # e.g. "Results_d=2-4_lmbdas=2.0-5.0_hdims=1024-2048.json"
     dims_str = "-".join([str(x) for x in args.dims])
     lmbdas_str = "-".join([str(x) for x in args.lmbdas])
     hdims_str = "-".join([str(x) for x in args.hidden_dims])
