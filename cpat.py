@@ -70,10 +70,12 @@ class Compatibility:
 
 def init_cpat(cnf):
     phi = FCCritic(
-        input_dim=cnf.source_dist.dim, hidden_layer_dims=[4096, 4096, 4096]
+        input_dim=cnf.source_dist.dim,
+        hidden_layer_dims=[cnf.cpat_hidden_layer_dim for _ in range(3)],
     ).to(cnf.device)
     psi = FCCritic(
-        input_dim=cnf.target_dist.dim, hidden_layer_dims=[4096, 4096, 4096]
+        input_dim=cnf.target_dist.dim,
+        hidden_layer_dims=[cnf.cpat_hidden_layer_dim for _ in range(3)],
     ).to(cnf.device)
     return Compatibility(phi, psi, cnf)
 

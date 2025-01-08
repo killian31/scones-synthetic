@@ -33,8 +33,9 @@ class GaussianSCONES:
         target_batches = [self.bproj.projector(s) for s in source_batches]
         samples = []
 
-        pbar = tqdm.tqdm(range(n_batches)) if verbose else range(n_batches)
-        for b in pbar:
+        if verbose:
+            pbar = tqdm.tqdm(range(n_batches))
+        for b in range(n_batches):
             source = source_batches[b]
             target = target_batches[b]
             for i in range(self.cnf.scones_iters):

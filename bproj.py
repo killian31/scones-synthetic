@@ -43,7 +43,16 @@ class BaryProj:
 def init_bproj(cpat, cnf):
     ds = cnf.source_dim
     dt = cnf.target_dim
-    T = FCNN(dims=[ds, 2048, 2048, 2048, dt], batchnorm=True).to(cnf.device)
+    T = FCNN(
+        dims=[
+            ds,
+            cnf.bproj_hidden_layer_dim,
+            cnf.bproj_hidden_layer_dim,
+            cnf.bproj_hidden_layer_dim,
+            dt,
+        ],
+        batchnorm=True,
+    ).to(cnf.device)
     return BaryProj(cpat, T, cnf)
 
 

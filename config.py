@@ -121,6 +121,8 @@ class GaussianConfig:
         score_steps_per_class=5,
         score_sampling_lr=0.001,
         seed=2039,
+        cpat_hidden_layer_dim=4096,
+        bproj_hidden_layer_dim=2048,
     ):
         """
         Configuration file for sampling Gaussians and comparing BW-UVP in multiple dimensions.
@@ -173,3 +175,5 @@ class GaussianConfig:
         self.cov_samples = cov_samples
         self.device = device
         self.seed = seed
+        self.cpat_hidden_layer_dim = cpat_hidden_layer_dim
+        self.bproj_hidden_layer_dim = bproj_hidden_layer_dim

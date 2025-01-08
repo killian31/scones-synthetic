@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "--dims",
         type=int,
         nargs="+",
-        default=[2, 16, 64, 128, 256],
+        default=[2],
         help="Dimensions to run",
     )
     parser.add_argument(
@@ -75,14 +75,30 @@ if __name__ == "__main__":
     parser.add_argument(
         "--verbose", action="store_true", help="Print verbose output during training"
     )
+    parser.add_argument(
+        "--cpat_hidden_layer_dim", type=int, default=4096, help="Hidden layer dimension"
+    )
+    parser.add_argument(
+        "--bproj_hidden_layer_dim",
+        type=int,
+        default=2048,
+        help="Hidden layer dimension",
+    )
+    parser.add_argument(
+        "--lmbda", type=float, default=None, help="Regularization parameter"
+    )
     args = parser.parse_args()
     OVERWRITE = args.overwrite
     dims = args.dims
     results = {str(d): {"runs": []} for d in dims}
     for d in dims[::-1]:
         for i in trange(3):
+            if args.lmbda is not None:
+                l = args.lmbda
+            else:
+                l = d * 2
             cnf = GaussianConfig(
-                name=f"l={2 * d}_d={d}_k=0",
+                name=f"l={l}_d={d}_cpatdim={args.cpat_hidden_layer_dim}_bprojdim={args.bproj_hidden_layer_dim}_k=0",
                 source_cov=f"data/d={d}/{i}/source_cov.npy",
                 target_cov=f"data/d={d}/{i}/target_cov.npy",
                 scale_huh=False,
@@ -97,8 +113,10 @@ if __name__ == "__main__":
                 scones_bs=args.scones_bs,
                 cov_samples=args.cov_samples,
                 device=args.device,
-                l=d * 2,  # regularization parameter
+                l=l,  # regularization parameter
                 seed=args.seed,
+                cpat_hidden_layer_dim=args.cpat_hidden_layer_dim,
+                bproj_hidden_layer_dim=args.bproj_hidden_layer_dim,
             )
 
             torch.manual_seed(cnf.seed)
@@ -149,5 +167,8 @@ if __name__ == "__main__":
         print(f"SCONES average BW-UVP at d={d}: {scones_avg_bw_uvp}")
         results[str(d)]["bproj-mean-bw-uvp"] = bproj_avg_bw_uvp
         results[str(d)]["scones-mean-bw-uvp"] = scones_avg_bw_uvp
-    with open(f"Results_{'_'.join([str(x) for x in dims])}.json", "w+") as f_out:
+    with open(
+        f"Results_{'_'.join([str(x) for x in dims])}l={l}_cpatdim={args.cpat_hidden_layer_dim}_bprojdim={args.bproj_hidden_layer_dim}.json",
+        "w+",
+    ) as f_out:
         f_out.write(json.dumps(results))
