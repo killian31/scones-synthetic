@@ -43,10 +43,10 @@ class GaussianSCONES:
                 with torch.no_grad():
                     target = target + (eps / 2) * score + np.sqrt(eps) * Z
                 target.requires_grad = True
-                if verbose and i % 100 == 0:
-                    cov = self._est_covariance(source, target)
-                    print("")
-                    print(cov)
+                # if verbose and i % 100 == 0:
+                #    cov = self._est_covariance(source, target)
+                #    print("")
+                #    print(cov)
             if verbose:
                 pbar.update(1)
             samples.append(target)
