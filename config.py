@@ -22,9 +22,11 @@ class Config:
         cpat_lr=0.00001,
         cpat_iters=5000,
         cpat_bs=500,
+        cpat_hidden_layer_dim=4096,
         bproj_lr=0.00001,
         bproj_iters=5000,
         bproj_bs=500,
+        bproj_hidden_layer_dim=2048,
         score_lr=0.00001,
         score_iters=5000,
         score_bs=500,
@@ -37,6 +39,7 @@ class Config:
         score_sampling_lr=0.001,
         score_noise_init=3,
         score_noise_final=0.01,
+        score_hidden_dim=2048,
         scones_samples_per_source=10,
         seed=2039,
     ):
@@ -79,9 +82,11 @@ class Config:
         self.cpat_lr = cpat_lr
         self.cpat_iters = cpat_iters
         self.cpat_bs = cpat_bs
+        self.cpat_hidden_layer_dim = cpat_hidden_layer_dim
         self.bproj_lr = bproj_lr
         self.bproj_iters = bproj_iters
         self.bproj_bs = bproj_bs
+        self.bproj_hidden_layer_dim = bproj_hidden_layer_dim
         self.score_lr = score_lr
         self.score_iters = score_iters
         self.score_bs = score_bs
@@ -90,6 +95,7 @@ class Config:
         self.score_sampling_lr = score_sampling_lr
         self.score_noise_init = score_noise_init
         self.score_noise_final = score_noise_final
+        self.score_hidden_dim = score_hidden_dim
         self.scones_iters = scones_iters
         self.scones_samples_per_source = scones_samples_per_source
         self.scones_bs = scones_bs

@@ -73,7 +73,17 @@ class Score:
 
 def init_score(cnf):
     d = cnf.target_dim
-    T = FCNN(dims=[d, 2048, 2048, 2048, 2048, d], batchnorm=True).to(cnf.device)
+    T = FCNN(
+        dims=[
+            d,
+            cnf.score_hidden_dim,
+            cnf.score_hidden_dim,
+            cnf.score_hidden_dim,
+            cnf.score_hidden_dim,
+            d,
+        ],
+        batchnorm=True,
+    ).to(cnf.device)
     return Score(T, cnf)
 
 

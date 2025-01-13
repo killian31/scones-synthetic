@@ -33,8 +33,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lmbdas",
         type=float,
-        nargs="+",
-        default=[0.1, 0.5, 1.0, 2.0, 4.0, 8.0, 9.0, 10.0, 15.0, 20.0],
+        default=None,
         help="List of regularization parameters to test",
     )
     parser.add_argument(
@@ -74,7 +73,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scones_sampling_lr",
         type=float,
-        default=1e-3,
+        nargs="+",
+        default=[0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10],
         help="Learning rate for SCONES sampling",
     )
     parser.add_argument(
@@ -96,14 +96,18 @@ if __name__ == "__main__":
     OVERWRITE = args.overwrite
 
     for d in args.dims:
-        for lmbda_val in args.lmbdas:
+        if args.lmbdas is None:
+            lmbda_val = d * 2
+        else:
+            lmbda_val = args.lmbdas
+        for epsilon in args.scones_sampling_lr:
             for hidden_dim in args.hidden_dims:
 
-                key = f"lambda={lmbda_val}_hdim={hidden_dim}"
+                key = f"eps={epsilon}_hdim={hidden_dim}"
                 if key not in results[str(d)]:
                     results[str(d)][key] = {"runs": []}
 
-                for i in trange(3, desc=f"d={d}, λ={lmbda_val}, hdim={hidden_dim}"):
+                for i in trange(3, desc=f"d={d}, ϵ={epsilon}, hdim={hidden_dim}"):
                     cnf = GaussianConfig(
                         name=(
                             f"l={lmbda_val}_d={d}_cpatdim={hidden_dim}_"
@@ -119,7 +123,7 @@ if __name__ == "__main__":
                         bproj_iters=args.bproj_iters,
                         bproj_lr=args.bproj_lr,
                         scones_iters=args.scones_iters,
-                        scones_sampling_lr=args.scones_sampling_lr,
+                        scones_sampling_lr=epsilon,
                         scones_bs=args.scones_bs,
                         cov_samples=args.cov_samples,
                         device=args.device,
@@ -168,7 +172,7 @@ if __name__ == "__main__":
                         {
                             "run_idx": i,
                             "d": d,
-                            "lambda": lmbda_val,
+                            "eps": epsilon,
                             "hdim": hidden_dim,
                             "bproj-bw-uvp": float(bproj_bw_uvp),
                             "scones-bw-uvp": float(scones_bw_uvp),
@@ -185,9 +189,9 @@ if __name__ == "__main__":
                 results[str(d)][key]["scones-mean-bw-uvp"] = float(scones_avg_bw_uvp)
 
     dims_str = "-".join([str(x) for x in args.dims])
-    lmbdas_str = "-".join([str(x) for x in args.lmbdas])
+    eps_str = "-".join([str(x) for x in args.scones_sampling_lr])
     hdims_str = "-".join([str(x) for x in args.hidden_dims])
-    out_filename = f"Results_d={dims_str}_lmbdas={lmbdas_str}_hdims={hdims_str}.json"
+    out_filename = f"Results_d={dims_str}_epsilons={eps_str}_hdims={hdims_str}.json"
 
     with open(out_filename, "w+") as f_out:
         json.dump(results, f_out, indent=2)

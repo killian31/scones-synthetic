@@ -94,7 +94,10 @@ class SCONES:
             Xt = torch.clone(Xs)
         else:
             Xt = torch.randn(size=[n_samples, 2]).to(self.cnf.device)
-
+        if verbose:
+            pbar = tqdm.tqdm(
+                range(len(self.score_est.noise_scales) * self.score_est.steps_per_class)
+            )
         for s in self.score_est.noise_scales:
             for _ in range(self.score_est.steps_per_class):
                 a = (
@@ -106,11 +109,15 @@ class SCONES:
                 scr = self.score(Xs, Xt, s)
                 with torch.no_grad():
                     Xt = Xt + a * scr + np.sqrt(2 * a) * noise
+                if verbose:
+                    pbar.update(1)
         # denoise via tweedie's identity
         Xt.requires_grad = True
         Xt = Xt + self.score_est.noise_scales[-1] ** 2 * self.score(
             Xs, Xt, self.score_est.noise_scales[-1]
         )
+        if verbose:
+            pbar.close()
         return (
             Xt.detach()
             .cpu()
@@ -120,30 +127,46 @@ class SCONES:
 
 
 if __name__ == "__main__":
+    import json
+    from time import time
+
     import imageio
     import matplotlib.pyplot as plt
 
     from bproj import init_bproj
     from cpat import init_cpat
+    from sinkhorn import bw_uvp
 
-    n_samples = 500
+    n_samples = 1000
+    hidden_dim = 64
+    lambda_ = 4
     gif_figs = []
+    times = {"bproj": [], "scones": []}
+    bw_uvps = {"bproj": [], "scones": []}
     if not os.path.exists("figs"):
         os.makedirs("figs", exist_ok=True)
     try:
-        for j in trange(10, 101):
+        for j in trange(0, 2100, 100):
             cnf = GaussianConfig(
-                name="l=4_d=2_k=0",
+                name=f"l={lambda_}_d=2_cpatdim={hidden_dim}_bprojdim={hidden_dim}_k=0",
                 source_cov="data/d=2/0/source_cov.npy",
                 target_cov="data/d=2/0/target_cov.npy",
                 scale_huh=False,
-                scones_iters=j,
+                cpat_bs=500,
+                cpat_iters=5000,
+                cpat_lr=1e-5 * 2,
+                bproj_bs=500,
+                bproj_iters=5000,
+                bproj_lr=1e-5,
+                scones_iters=j if j > 0 else 1,
                 scones_bs=500,
-                cov_samples=500,
+                cov_samples=n_samples,
                 scones_sampling_lr=0.001,
                 device="cpu",
-                l=4,
+                l=lambda_,
                 seed=2039,
+                cpat_hidden_layer_dim=hidden_dim,
+                bproj_hidden_layer_dim=hidden_dim,
             )
 
             torch.manual_seed(cnf.seed)
@@ -158,12 +181,15 @@ if __name__ == "__main__":
             ex_samples = cnf.target_dist.rvs(size=(n_samples,))
             source_dist = cnf.source_dist.rvs(size=(cnf.cov_samples,))
 
+            start = time()
             learned_samples_bproj = (
                 bproj.projector(torch.FloatTensor(source_dist).to(cnf.device))
                 .detach()
                 .cpu()
                 .numpy()
             )
+            times["bproj"].append(time() - start)
+            start = time()
             learned_samples_scones = (
                 scones.sample(
                     torch.FloatTensor(source_dist).to(cnf.device),
@@ -172,6 +198,17 @@ if __name__ == "__main__":
                 .detach()
                 .cpu()
                 .numpy()
+            )
+            times["scones"].append(time() - start)
+            bproj_cov = bproj.covariance(torch.FloatTensor(source_dist).to(cnf.device))
+            scones_cov = scones.covariance(
+                torch.FloatTensor(source_dist).to(cnf.device), verbose=False
+            )
+            bw_uvps["bproj"].append(
+                bw_uvp(bproj_cov, cnf.source_cov, cnf.target_cov, cnf.l)
+            )
+            bw_uvps["scones"].append(
+                bw_uvp(scones_cov, cnf.source_cov, cnf.target_cov, cnf.l)
             )
 
             plt.figure(figsize=(18, 6))
@@ -219,16 +256,43 @@ if __name__ == "__main__":
                 )
             plt.xlim(xlim)
             plt.ylim(ylim)
-            plt.title(f"SCONES Samples, Iteration {j}")
+            plt.title(f"SCONES Samples, Iteration {j if j > 0 else 1}")
             plt.tight_layout()
-            plt.savefig(f"figs/scones_{j}.png")
-            gif_figs.append(f"figs/scones_{j}.png")
+            plt.savefig(f"figs/scones_{j if j > 0 else 1}.png")
+            gif_figs.append(f"figs/scones_{j if j > 0 else 1}.png")
             plt.close()
     except KeyboardInterrupt:
-        print(f"Interrupted at iteration {j}")
+        print(f"Interrupted at iteration {j if j > 0 else 1}")
 
-    with imageio.get_writer("scones.gif", mode="I") as writer:
+    with imageio.get_writer(
+        f"scones_l={lambda_}_h={hidden_dim}.gif", mode="I"
+    ) as writer:
         for filename in gif_figs:
             image = imageio.imread(filename)
             writer.append_data(image)
     print("Gif created!")
+
+    bproj_mean_time = np.mean(times["bproj"])
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[0].plot(range(0, 2100, 100), bw_uvps["bproj"], label="Barycentric Projection")
+    ax[0].plot(range(0, 2100, 100), bw_uvps["scones"], label="SCONES")
+    ax[0].set_xlabel("Iterations")
+    ax[0].set_ylabel("BW UVP")
+    ax[0].set_title("BW UVP vs Iterations")
+    ax[0].legend()
+    ax[1].plot(
+        range(0, 2100, 100), [bproj_mean_time] * 21, label="Barycentric Projection"
+    )
+    ax[1].plot(range(0, 2100, 100), times["scones"], label="SCONES")
+    ax[1].set_xlabel("Iterations")
+    ax[1].set_ylabel("Time (s)")
+    ax[1].set_title("Time vs Iterations")
+    ax[1].legend()
+    plt.tight_layout()
+    plt.savefig(f"scones_l={lambda_}_h={hidden_dim}.png")
+
+    with open(f"scones_time_l={lambda_}_h={hidden_dim}.json", "w") as f:
+        json.dump(times, f)
+
+    with open(f"scones_bwuvp_l={lambda_}_h={hidden_dim}.json", "w") as f:
+        json.dump(bw_uvps, f)
