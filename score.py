@@ -7,7 +7,7 @@ import torch
 import tqdm
 
 from config import Config
-from nets import FCNN, FCNN2
+from nets import FCNN
 
 
 class Score:

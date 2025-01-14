@@ -1,21 +1,17 @@
 import argparse
 import json
 import os
-import sys
-from collections import defaultdict
 
 import numpy as np
-import scipy.stats
 import torch
 from tqdm import trange
 
-from bproj import BaryProj, init_bproj, train_bproj
+from bproj import  init_bproj, train_bproj
 from config import GaussianConfig
-from cpat import Compatibility, init_cpat, train_cpat
-from datasets import Gaussian
+from cpat import init_cpat, train_cpat
 from scones import GaussianSCONES
 from score import GaussianScore
-from sinkhorn import bw_uvp, sample_stats, sinkhorn, sq_bw_distance
+from sinkhorn import bw_uvp
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import tqdm
 
-from nets import FCNN, FCNN2
+from nets import FCNN
 
 
 class BaryProj:

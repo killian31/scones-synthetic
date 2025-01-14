@@ -1,14 +1,12 @@
 import os
-import shutil
 
 import numpy as np
 import torch
 import tqdm
 from tqdm import trange
 
-from config import Config, GaussianConfig
-from nets import FCNN, FCNN2, FCCritic
-from score import GaussianScore, Score
+from config import GaussianConfig
+from score import GaussianScore
 
 
 class GaussianSCONES:

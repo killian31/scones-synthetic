@@ -77,7 +77,7 @@ def main():
         type=float,
         nargs="+",
         default=[1e-5, 1e-4, 1e-3, 1e-2, 0.1, 0.5, 1, 2],
-        help="List of step sizes (learning rates) for Langevin dynamics.",
+        help="List of step sizes for Langevin dynamics.",
     )
 
     parser.add_argument(
